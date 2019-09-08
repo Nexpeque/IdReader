@@ -7,7 +7,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "acorn": "^7.0.0",
     "barcode-reader": "^1.6.1",
+    "eslint": "^6.3.0",
+    "firebase": "^6.6.0",
     "react": "16.8.6",
     "react-barcode-reader": "0.0.1",
     "react-native": "0.60.5",

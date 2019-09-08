@@ -6,9 +6,9 @@
  * @flow
  */
 
-import React, {Fragment} from 'react';
+import React, { Fragment } from 'react';
 
-import BarcodeScaner from './components/BarcodeScaner'
+import BarcodeScaner from './src/screens/BarcodeScaner'
 
 const App = () => {
   return (

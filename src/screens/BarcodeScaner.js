@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { View, AppRegistry, Text, Button } from 'react-native';
-import {RNCamera} from 'react-native-camera';
-
+import { View, AppRegistry, Text, Button, Alert } from 'react-native';
+import { RNCamera } from 'react-native-camera';
+import { db } from '../config';
 export default class ScannerScene extends Component {
 	constructor(props) {
 		super(props);
@@ -18,14 +18,41 @@ export default class ScannerScene extends Component {
 		};
 	}
 
-	onBarCodeRead(scanResult) {
-		console.warn(scanResult.type);
-		console.warn(scanResult.data);
-		if (scanResult.data != null) {
-			if (!this.barcodeCodes.includes(scanResult.data)) {
-				this.barcodeCodes.push(scanResult.data);
-				console.warn('onBarCodeRead call');
+	addItem = (scanResult) => {
+		db.ref('/ids').push(scanResult);
+	};
+
+	handleAccept = (scanResult) => {
+		var exists = false;
+		db.ref('/ids').orderByChild('data').equalTo(scanResult.data).once('value', snapshot => {
+			if (snapshot.exists()) {
+				exists = true;
 			}
+		}).then(() => {
+			if (!exists) {
+				this.addItem(scanResult);
+				Alert.alert('Id added successfully');
+			} else {
+				Alert.alert('Error', 'El id ya existe');
+			}
+		});
+	}
+
+	onBarCodeRead(scanResult) {
+		if (scanResult.data != null) {
+			Alert.alert(
+				`¿Deseas agregar el id?`,
+				`${scanResult.data}`,
+				[
+					{
+						text: 'Cancelar',
+						onPress: () => { },
+						style: 'cancel',
+					},
+					{ text: 'OK', onPress: () => this.handleAccept(scanResult) },
+				],
+				{ cancelable: false },
+			);
 		}
 		return;
 	}
@@ -41,8 +68,8 @@ export default class ScannerScene extends Component {
 					style={styles.preview}
 					type={this.state.camera.type}
 					flashMode={this.state.camera.flashMode}
-					onFocusChanged={() => {}}
-					onZoomChanged={() => {}}
+					onFocusChanged={() => { }}
+					onZoomChanged={() => { }}
 					defaultTouchToFocus
 					mirrorImage={false}
 					barcodeFinderVisible={this.state.camera.barcodeFinderVisible}
@@ -50,14 +77,14 @@ export default class ScannerScene extends Component {
 					barcodeFinderHeight={220}
 					barcodeFinderBorderColor="red"
 					barcodeFinderBorderWidth={2}
-                    onBarCodeRead={this.onBarCodeRead.bind(this)}
-                    captureAudio={false}
+					onBarCodeRead={this.onBarCodeRead.bind(this)}
+					captureAudio={false}
 				/>
 				<View style={[styles.overlay, styles.topOverlay]}>
 					<Text style={styles.scanScreenMessage}>Please scan the barcode.</Text>
 				</View>
 				<View style={[styles.overlay, styles.bottomOverlay]}>
-					<Button style={styles.enterBarcodeManualButton} title="Enter Barcode"/>
+					<Button style={styles.enterBarcodeManualButton} title="Enter Barcode" />
 				</View>
 			</View>
 		);
