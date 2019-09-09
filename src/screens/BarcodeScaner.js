@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, AppRegistry, Text, Button, Alert } from 'react-native';
+import { View, AppRegistry, Alert } from 'react-native';
 import { RNCamera } from 'react-native-camera';
 import { db } from '../config';
 export default class ScannerScene extends Component {
@@ -18,13 +18,15 @@ export default class ScannerScene extends Component {
 		};
 	}
 
-	addItem = (scanResult) => {
-		db.ref('/ids').push(scanResult);
+	addItem = (id) => {
+		db.ref('/ids').push({
+			id: id
+		});
 	};
 
 	handleAccept = (scanResult) => {
 		var exists = false;
-		db.ref('/ids').orderByChild('data').equalTo(scanResult.data).once('value', snapshot => {
+		db.ref('/ids').orderByChild('id').equalTo(scanResult).once('value', snapshot => {
 			if (snapshot.exists()) {
 				exists = true;
 			}
@@ -38,23 +40,29 @@ export default class ScannerScene extends Component {
 		});
 	}
 
-	onBarCodeRead(scanResult) {
-		if (scanResult.data != null) {
-			Alert.alert(
-				`¿Deseas agregar el id?`,
-				`${scanResult.data}`,
-				[
-					{
-						text: 'Cancelar',
-						onPress: () => { },
-						style: 'cancel',
-					},
-					{ text: 'OK', onPress: () => this.handleAccept(scanResult) },
-				],
-				{ cancelable: false },
-			);
-		}
-		return;
+	onBarCodeRead = (scanResult) => {
+		var dataProcess = scanResult.barcodes[0].rawData.split('\u0000');
+		console.log(dataProcess);
+		var filtered = dataProcess.filter(function (value, index, arr) {
+			return value != "";
+		});
+		console.log(filtered);
+
+		var result = filtered[3].match(/\d+/g);
+		console.log(result[0]);
+		Alert.alert(
+			`¿Deseas agregar el id?`,
+			`${scanResult.type}`,
+			[
+				{
+					text: 'Cancelar',
+					onPress: () => { },
+					style: 'cancel',
+				},
+				{ text: 'OK', onPress: () => this.handleAccept(result[0]) },
+			],
+			{ cancelable: false },
+		);
 	}
 
 	render() {
@@ -77,15 +85,11 @@ export default class ScannerScene extends Component {
 					barcodeFinderHeight={220}
 					barcodeFinderBorderColor="red"
 					barcodeFinderBorderWidth={2}
-					onBarCodeRead={this.onBarCodeRead.bind(this)}
+					onGoogleVisionBarcodesDetected={this.onBarCodeRead.bind(this)}
+					googleVisionBarcodeType={RNCamera.Constants.GoogleVisionBarcodeDetection.BarcodeType.PDF417}
 					captureAudio={false}
 				/>
-				<View style={[styles.overlay, styles.topOverlay]}>
-					<Text style={styles.scanScreenMessage}>Please scan the barcode.</Text>
-				</View>
-				<View style={[styles.overlay, styles.bottomOverlay]}>
-					<Button style={styles.enterBarcodeManualButton} title="Enter Barcode" />
-				</View>
+
 			</View>
 		);
 	}
